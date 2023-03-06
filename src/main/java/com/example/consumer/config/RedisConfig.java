@@ -1,20 +1,36 @@
 package com.example.consumer.config;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.stereotype.Service;
-import redis.clients.jedis.Jedis;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 
-@Service
-@RequiredArgsConstructor
-public class KafkaRedisService {
+@Configuration
+public class RedisConfig {
 
-  private final Jedis jedis;
+  @Value("${spring.redis.host}")
+  private String host;
 
-  @KafkaListener(topics = "my-topic", groupId = "my-group")
-  public void processRecord(@NonNull ConsumerRecord<String, Integer> record) {
-    int number = record.value();
-    String key = "number:" + number;
-    jedis.incr(key);
+  @Value("${spring.redis.port}")
+  private int port;
+
+  @Bean
+  public LettuceConnectionFactory redisConnectionFactory() {
+    RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(host, port);
+    return new LettuceConnectionFactory(config);
+  }
+
+  @Bean
+  public RedisTemplate<String, Integer> redisTemplate() {
+    RedisTemplate<String, Integer> redisTemplate = new RedisTemplate<>();
+    redisTemplate.setConnectionFactory(redisConnectionFactory());
+    return redisTemplate;
   }
 }
+
+
+
+
+
